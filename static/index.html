@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kiểm Định Sản Phẩm Lỗi</title>
+  <link rel="icon" href="data:,">
+  <style nonce="__CSP_NONCE__">
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #F8FAFC; color: #0F172A; font-size: 14px; line-height: 1.5; }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 24px 20px 40px; display: flex; flex-direction: column; gap: 16px; }
+    .hdr { display: flex; flex-direction: column; gap: 14px; } h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+    h2 { font-size: 15px; font-weight: 600; } .sub { color: #475569; margin-top: 2px; }
+    .kpis { display: grid; grid-template-columns: repeat(4, minmax(128px, 1fr)); gap: 12px; }
+    .kpi, .panel { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; }
+    .kpi { padding: 12px 16px; } .kpi-lbl { font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.03em; }
+    .kpi-val { font-size: 22px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+    .panel { padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+    .ctrl-row, .sample-row, .hist-hdr, .hist-act, .confirm, .samples { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+    .hist-hdr { justify-content: space-between; } .lbl { font-size: 13px; font-weight: 600; color: #334155; }
+    .fname { font-size: 13px; color: #475569; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 7px 12px; min-width: 180px; max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 8px 14px; border-radius: 6px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+    .btn:hover:not(:disabled) { background: #F1F5F9; border-color: #94A3B8; } .btn:focus-visible { outline: 2px solid #1D4ED8; outline-offset: 2px; } .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-pri { background: #1D4ED8; border-color: #1D4ED8; color: #FFFFFF; } .btn-pri:hover:not(:disabled) { background: #1E40AF; border-color: #1E40AF; }
+    .btn-danger { background: #DC2626; border-color: #DC2626; color: #FFFFFF; } .btn-danger:hover:not(:disabled) { background: #B91C1C; border-color: #B91C1C; }
+    .btn-sample { padding: 6px 12px; background: #F8FAFC; } .btn-sample.active { background: #EFF6FF; border-color: #1D4ED8; color: #1D4ED8; }
+    .err { background: #FEF2F2; border: 1px solid #FECACA; color: #B91C1C; border-radius: 6px; padding: 10px 12px; font-size: 13px; font-weight: 500; }
+    .frames { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .vp { aspect-ratio: 3 / 2; background: #F1F5F9; border: 1px solid #E2E8F0; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .vp img { width: 100%; height: 100%; object-fit: contain; } .empty, .nil { font-size: 13px; color: #64748B; }
+    .split { display: grid; grid-template-columns: 320px 1fr; gap: 16px; align-items: start; }
+    .metrics { display: grid; grid-template-columns: 1fr auto; row-gap: 10px; column-gap: 12px; align-items: center; }
+    .metrics dt { color: #475569; font-size: 13px; } .metrics dd { font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 700; letter-spacing: 0.02em; }
+    .badge-pass { background: #DCFCE7; color: #166534; } .badge-err { background: #FEE2E2; color: #B91C1C; } .badge-nil { background: #F1F5F9; color: #475569; }
+    .note { font-size: 12px; color: #64748B; } .tbl-wrap { width: 100%; overflow-x: auto; scrollbar-width: thin; } table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 9px 10px; border-bottom: 1px solid #E2E8F0; text-align: left; } th { background: #F8FAFC; color: #475569; font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; } .tnum { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .nil { text-align: center; padding: 20px 10px; } .fname-cell { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } [hidden], .vp img[hidden] { display: none; }
+    @media (max-width: 900px) { .frames, .split { grid-template-columns: 1fr; } .kpis { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .wrap { padding: 16px 12px 28px; } .fname { min-width: 0; flex: 1 1 140px; } th { white-space: normal; } th, td { padding: 7px 5px; font-size: 11.5px; } .tnum { white-space: normal; } .fname-cell { max-width: 96px; } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="hdr">
+      <div><h1>Kiểm Định Sản Phẩm Lỗi</h1><p class="sub">Phân tích bề mặt qua thị giác máy tính OpenCV</p></div>
+      <section class="kpis" aria-label="Thống kê tổng hợp">
+        <div class="kpi"><div class="kpi-lbl">Tổng lượt kiểm</div><div class="kpi-val" id="kpiTotal">0</div></div>
+        <div class="kpi"><div class="kpi-lbl">Đạt chuẩn</div><div class="kpi-val" id="kpiPass">0</div></div>
+        <div class="kpi"><div class="kpi-lbl">Phát hiện lỗi</div><div class="kpi-val" id="kpiDefect">0</div></div>
+        <div class="kpi"><div class="kpi-lbl">Tỷ lệ đạt</div><div class="kpi-val" id="kpiRate">0.0%</div></div>
+      </section>
+    </header>
+    <section class="panel" aria-label="Thao tác kiểm định">
+      <div class="ctrl-row">
+        <input id="fileInput" type="file" accept=".png,.jpg,.jpeg,.webp,.bmp" hidden>
+        <button type="button" id="pickBtn" class="btn">Tải ảnh lên</button>
+        <span id="fileName" class="fname">Chưa chọn ảnh</span>
+        <button type="button" id="inspectBtn" class="btn btn-pri">Phân tích ngay</button>
+      </div>
+      <div class="sample-row"><span class="lbl">Mẫu thử nhanh:</span><div id="sampleList" class="samples"></div></div>
+      <div id="errorBar" class="err" role="alert" hidden></div>
+    </section>
+    <section class="frames" aria-label="Hình ảnh trực quan">
+      <article class="panel"><h2>1. Ảnh gốc</h2><div class="vp"><img id="imgOrig" alt="Ảnh gốc" hidden><span id="emptyOrig" class="empty">Chưa có dữ liệu</span></div></article>
+      <article class="panel"><h2>2. Mặt nạ OpenCV</h2><div class="vp"><img id="imgMask" alt="Mặt nạ OpenCV" hidden><span id="emptyMask" class="empty">Chưa có dữ liệu</span></div></article>
+      <article class="panel"><h2>3. Kết quả khoanh vùng</h2><div class="vp"><img id="imgAnn" alt="Kết quả khoanh vùng" hidden><span id="emptyAnn" class="empty">Chưa có dữ liệu</span></div></article>
+    </section>
+    <section class="split">
+      <article class="panel"><h2>Kết quả kiểm định</h2>
+        <dl class="metrics">
+          <dt>Trạng thái</dt><dd><span id="resBadge" class="badge badge-nil">Chưa có dữ liệu</span></dd>
+          <dt>Số lượng lỗi</dt><dd id="resCount">—</dd><dt>Diện tích lỗi</dt><dd id="resRatio">—</dd><dt>Thời gian xử lý</dt><dd id="resTime">—</dd>
+        </dl>
+      </article>
+      <article class="panel"><h2>Danh sách vết lỗi</h2>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th class="num">#</th><th>Phân loại</th><th class="num">Tọa độ (X, Y)</th><th class="num">Kích thước (R × C)</th><th class="num">Diện tích (px²)</th></tr></thead>
+          <tbody id="defectBody"><tr><td colspan="5" class="nil">Chưa có dữ liệu</td></tr></tbody>
+        </table></div>
+      </article>
+    </section>
+    <section class="panel">
+      <div class="hist-hdr">
+        <div class="ctrl-row"><h2>Lịch sử kiểm định</h2><span class="note">Tối đa 20 lượt gần nhất</span></div>
+        <div class="hist-act">
+          <button type="button" id="clearInitBtn" class="btn">Xóa lịch sử</button>
+          <span id="clearConfirm" class="confirm" hidden><span class="lbl">Xác nhận xóa?</span>
+            <button type="button" id="clearDoBtn" class="btn btn-danger">Xác nhận xóa</button><button type="button" id="clearCancelBtn" class="btn">Hủy</button>
+          </span>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Thời gian</th><th>Tên mẫu / Ảnh</th><th>Kết quả</th><th class="num">Số lỗi</th><th class="num">Diện tích lỗi</th><th class="num">Xử lý (ms)</th></tr></thead>
+        <tbody id="historyBody"><tr><td colspan="6" class="nil">Chưa có dữ liệu</td></tr></tbody>
+      </table></div>
+    </section>
+  </main>
+  <script nonce="__CSP_NONCE__">
+    const $ = (id) => document.getElementById(id);
+    let selectedFile = null, selectedSample = null, busy = false;
+    const errMsg = (e) => (e instanceof Error && e.message) ? e.message : "Mất kết nối máy chủ. Thử lại sau.";
+    const mapErr = (s, d) => (typeof d === "string" && d.trim()) ? d : (s === 404 ? "Không tìm thấy dữ liệu." : s === 422 ? "Dữ liệu không hợp lệ." : "Mất kết nối máy chủ. Thử lại sau.");
+    const showErr = (msg) => { $("errorBar").textContent = msg || ""; $("errorBar").hidden = !msg; };
+    const api = async (url, opts) => {
+      const res = await fetch(url, opts), body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(mapErr(res.status, body && body.detail));
+      return body;
+    };
+    const setBusy = (on) => {
+      busy = on; $("pickBtn").disabled = on; $("inspectBtn").disabled = on; $("inspectBtn").textContent = on ? "Đang tải..." : "Phân tích ngay";
+      document.querySelectorAll(".btn-sample").forEach((b) => { b.disabled = on; });
+    };
+    const setPng = (img, emptyEl, src) => {
+      const ok = typeof src === "string" && src.startsWith("data:image/png;base64,");
+      if (ok) img.src = src; else img.removeAttribute("src"); img.hidden = !ok; emptyEl.hidden = ok;
+    };
+    const applyBadge = (el, status) => {
+      el.className = "badge " + (status === "PASS" ? "badge-pass" : status === "DEFECT" ? "badge-err" : "badge-nil");
+      el.textContent = status === "PASS" ? "ĐẠT" : status === "DEFECT" ? "LỖI" : "Chưa có dữ liệu";
+      return el;
+    };
+    const cell = (text, cls) => { const td = document.createElement("td"); if (cls) td.className = cls; td.textContent = text; return td; };
+    const emptyRow = (cols) => { const tr = document.createElement("tr"), td = cell("Chưa có dữ liệu", "nil"); td.colSpan = cols; tr.appendChild(td); return tr; };
+    const highlightSample = (name) => document.querySelectorAll(".btn-sample").forEach((b) => b.classList.toggle("active", b.dataset.name === name));
+    const fmtTime = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? String(iso || "") : d.toLocaleString("vi-VN"); };
+    const renderInspect = (d) => {
+      setPng($("imgOrig"), $("emptyOrig"), d.original_image); setPng($("imgMask"), $("emptyMask"), d.processed_mask); setPng($("imgAnn"), $("emptyAnn"), d.annotated_image);
+      applyBadge($("resBadge"), d.status); $("resCount").textContent = String(d.defect_count ?? 0);
+      $("resRatio").textContent = Number(d.defect_ratio ?? 0).toFixed(2) + "%"; $("resTime").textContent = Number(d.process_time_ms ?? 0).toFixed(2) + " ms";
+      const rows = (d.defects || []).map((item) => {
+        const [x = 0, y = 0, w = 0, h = 0] = Array.isArray(item.bbox) ? item.bbox : [], tr = document.createElement("tr");
+        tr.append(cell(String(item.id), "num"), cell(String(item.type || "")), cell(x + ", " + y, "num"), cell(w + " × " + h, "num"), cell(String(item.area ?? 0), "num"));
+        return tr;
+      });
+      $("defectBody").replaceChildren(...(rows.length ? rows : [emptyRow(5)]));
+    };
+    const loadHistory = async () => {
+      const data = await api("/api/history"), s = data.summary || {};
+      $("kpiTotal").textContent = String(s.total ?? 0); $("kpiPass").textContent = String(s.passed ?? 0);
+      $("kpiDefect").textContent = String(s.defected ?? 0); $("kpiRate").textContent = Number(s.pass_rate ?? 0).toFixed(1) + "%";
+      const rows = (data.items || []).slice(0, 20).map((it) => {
+        const tr = document.createElement("tr"), resTd = document.createElement("td");
+        resTd.appendChild(applyBadge(document.createElement("span"), it.status));
+        tr.append(cell(fmtTime(it.created_at), "tnum"), cell(String(it.filename || ""), "fname-cell"), resTd, cell(String(it.defect_count ?? 0), "num"), cell(Number(it.defect_ratio ?? 0).toFixed(2) + "%", "num"), cell(Number(it.process_time_ms ?? 0).toFixed(2), "num"));
+        return tr;
+      });
+      $("historyBody").replaceChildren(...(rows.length ? rows : [emptyRow(6)]));
+    };
+    const runInspect = async (fd) => {
+      if (busy) return; showErr(""); setBusy(true);
+      try { renderInspect(await api("/api/inspect", { method: "POST", body: fd })); await loadHistory(); }
+      catch (err) { showErr(errMsg(err)); } finally { setBusy(false); }
+    };
+    const loadSamples = async () => {
+      const list = await api("/api/samples");
+      $("sampleList").replaceChildren(...(Array.isArray(list) ? list : []).map((s) => {
+        const btn = document.createElement("button"); btn.type = "button"; btn.className = "btn btn-sample"; btn.dataset.name = s.name; btn.textContent = s.label;
+        btn.addEventListener("click", () => {
+          if (busy) return; selectedSample = s.name; selectedFile = null; $("fileInput").value = ""; $("fileName").textContent = "Chưa chọn ảnh";
+          highlightSample(s.name); const fd = new FormData(); fd.append("sample_name", s.name); runInspect(fd);
+        });
+        return btn;
+      }));
+    };
+    $("pickBtn").addEventListener("click", () => $("fileInput").click());
+    $("fileInput").addEventListener("change", (e) => {
+      const f = e.target.files && e.target.files[0]; if (!f) return;
+      selectedFile = f; selectedSample = null; $("fileName").textContent = f.name; highlightSample(null); showErr("");
+    });
+    $("inspectBtn").addEventListener("click", () => {
+      const fd = new FormData();
+      if (selectedFile) fd.append("file", selectedFile); else if (selectedSample) fd.append("sample_name", selectedSample); else { showErr("Chưa chọn ảnh."); return; }
+      runInspect(fd);
+    });
+    $("clearInitBtn").addEventListener("click", () => { $("clearInitBtn").hidden = true; $("clearConfirm").hidden = false; });
+    $("clearCancelBtn").addEventListener("click", () => { $("clearConfirm").hidden = true; $("clearInitBtn").hidden = false; });
+    $("clearDoBtn").addEventListener("click", async () => {
+      showErr(""); $("clearDoBtn").disabled = true;
+      try { await api("/api/history", { method: "DELETE" }); $("clearConfirm").hidden = true; $("clearInitBtn").hidden = false; await loadHistory(); }
+      catch (err) { showErr(errMsg(err)); } finally { $("clearDoBtn").disabled = false; }
+    });
+    Promise.all([loadSamples(), loadHistory()]).catch((err) => showErr(errMsg(err)));
+  </script>
+</body>
+</html>
